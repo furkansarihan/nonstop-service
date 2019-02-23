@@ -73,8 +73,7 @@ def serve_analysed_data(track_uri, auth_token):
         nsanalyzed = nsaobj.NSAnalyzed(track_uri, analyzed, INDEX_SIZE, analyzer.VERSION)
 
         d = nsanalyzed.__dict__
-        #print(dict(d))
-        mongo.insert(dict(d))
+        mongo.insert(d)
     
     response = {}
     response["analyser_version"] = nsanalyzed.analyzer_version
@@ -88,5 +87,3 @@ if __name__ == '__main__':
     mongo.set_db('analyze')
     mongo.set_collection(analyzer.VERSION)
     app.run(host='127.0.0.1', port=8080, debug=True)
-
-

@@ -4,7 +4,6 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score, normalized_mutual_info_score
 
-
 class NonstopAnalyzer:
 
     def __init__(self): 
