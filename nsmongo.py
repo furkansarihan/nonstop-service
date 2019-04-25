@@ -6,6 +6,14 @@ class NSMongo:
         self.db = None
         self.collection = None
         
+    def isAlive(self):
+        return self.client.server_info()
+
+    def areParamsSet(self):
+        if self.db == None or self.collection == None:
+            return False
+        return True
+
     def set_db(self, db_name):
         self.db = self.client[db_name]
     

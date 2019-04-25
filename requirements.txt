@@ -3,6 +3,7 @@ requests==2.21.0
 tensorflow==1.13.0rc1
 scikit-learn==0.20.2
 numpy==1.16.1
-pymongo==3.7.2
+pymongo==3.8.0
 dnspython==1.16.0
 python-dotenv==0.10.1
+python-appengine==1.9.15

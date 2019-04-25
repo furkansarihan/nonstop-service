@@ -54,6 +54,27 @@ def analyzeData(raw):
 def status():
     return 'Nonstop service is online!'
 
+@app.route('/mongo/sanity')
+def sanity():
+    if not mongo.areParamsSet():
+        return "not sane"
+    try:
+        mongo.isAlive() 
+        return "sane"
+    except Exception as error:
+        return "not sane"
+        
+@app.route('/mongo/connect')
+def connect():
+    mongo.set_db('analyze')
+    mongo.set_collection(analyzer.VERSION)
+    return "hope connected"
+
+@app.route('/get/<track_uri>')
+def getTrackUri(track_uri):
+    mongo.set_collection("0.0.1", "analyze")
+    return str(mongo.get({ "track_uri" : track_uri}))
+
 @app.route('/analyse/<track_uri>/<auth_token>')
 def serve_analysed_data(track_uri, auth_token):
 
@@ -84,6 +105,4 @@ def serve_analysed_data(track_uri, auth_token):
     return str(response)
 
 if __name__ == '__main__':
-    mongo.set_db('analyze')
-    mongo.set_collection(analyzer.VERSION)
     app.run(host='127.0.0.1', port=8080, debug=True)
