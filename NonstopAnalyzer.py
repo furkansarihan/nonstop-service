@@ -55,7 +55,7 @@ class NonstopAnalyzer:
                 i = i + 1
 
             if segm > 0:
-                items.append({"start" : a_d['segments'][i]["start"],
+                items.append({"start" : str(a_d['segments'][i]["start"]).replace(".", "")[0:-2],
                                         "index" : int(pred[i])})
 
         return items

@@ -21,11 +21,26 @@ import NonstopAnalyzer as na
 import nsmongo
 import nsanalyzed as nsaobj
 
+import firebase_admin
+from firebase_admin import firestore
+from firebase_admin import auth
+from firebase_admin import credentials
+
 load_dotenv()
 
 app = Flask(__name__)
 analyzer = na.NonstopAnalyzer()
 mongo = nsmongo.NSMongo(os.getenv('MONGO_DB_STRING'))
+
+# Use a service account
+cred = credentials.Certificate('cred.json')
+firebase_admin.initialize_app(cred)
+
+# database
+db = firestore.client()
+
+# db referances
+analyses_ref = db.collection(u'analyses')
 
 INDEX_SIZE = 4 # what is this ?
 
@@ -46,7 +61,7 @@ def requestAnalyzeFromSpotify(track_uri, auth_token):
 def analyzeData(raw):
     if 'error' in raw:
         return str("Error happened! "+ str(raw['error']))
-
+    print(str(raw))
     analyzed = analyzer.analyze(raw)
     return analyzed
 
@@ -75,7 +90,7 @@ def getTrackUri(track_uri):
     mongo.set_collection("0.0.1", "analyze")
     return str(mongo.get({ "track_uri" : track_uri}))
 
-@app.route('/analyse/<track_uri>/<auth_token>')
+@app.route('/analyse/v1/<track_uri>/<auth_token>')
 def serve_analysed_data(track_uri, auth_token):
 
     isExistInMongo = checkAnalyzeInMongo(track_uri)
@@ -98,6 +113,39 @@ def serve_analysed_data(track_uri, auth_token):
     
     response = {}
     response["analyser_version"] = nsanalyzed.analyzer_version
+    response["index_size"] = nsanalyzed.index_size
+    response["item_size"] = len(nsanalyzed.items)
+    response["items"] = nsanalyzed.items
+    
+    return str(response)
+
+@app.route('/analyse/v2/<track_uri>/<auth_token>')
+def serve_with_firestore(track_uri, auth_token):
+
+    analysis_doc = analyses_ref.document(track_uri).get()
+    
+    if (analysis_doc.exists):
+        analysis_dict = analysis_doc.to_dict()
+        nsanalyzed = nsaobj.NSAnalyzed(
+            track_uri,
+            analysis_dict['items'], 
+            analysis_dict['index_size'], 
+            analysis_dict['analyzer_version'])
+
+    else:
+        rawAnalyze = requestAnalyzeFromSpotify(track_uri, auth_token)
+        analyzed = analyzeData(rawAnalyze)
+
+        if 'error' in analyzed:
+            return str("Error happened! "+ str(raw['error']))
+        else:
+            nsanalyzed = nsaobj.NSAnalyzed(track_uri, analyzed, INDEX_SIZE, analyzer.VERSION)
+
+            d = nsanalyzed.__dict__
+            analyses_ref.document(track_uri).set(d)
+    
+    response = {}
+    #response["analyser_version"] = nsanalyzed.analyzer_version
     response["index_size"] = nsanalyzed.index_size
     response["item_size"] = len(nsanalyzed.items)
     response["items"] = nsanalyzed.items
